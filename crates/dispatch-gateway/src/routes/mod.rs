@@ -3,6 +3,7 @@ pub mod health;
 pub mod metrics;
 pub mod receipts;
 pub mod rpc;
+pub mod seahorn;
 pub mod ws;
 
 use crate::server::AppState;
@@ -15,6 +16,7 @@ pub fn router(state: AppState) -> Router {
         .merge(metrics::router())
         .merge(receipts::router())
         .merge(rpc::router())
+        .merge(seahorn::router())
         .merge(ws::router())
         .with_state(state)
 }

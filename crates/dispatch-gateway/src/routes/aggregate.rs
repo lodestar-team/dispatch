@@ -59,11 +59,15 @@ async fn aggregate_handler(
         ));
     }
 
-    let data_service = state.config.tap.data_service_address;
     // Use the consumer-provided payer if present; fall back to gateway's own address
     // for backwards-compatible callers that pre-date the consumer-pays model.
     let payer = req.payer.unwrap_or(state.signer_address);
     let domain_sep = state.tap_domain_separator;
+
+    // Derive data_service from the receipts — all must agree.
+    // We accept any data service signed by this gateway (RPC, Seahorn, etc.)
+    // rather than restricting to a single configured address.
+    let data_service = req.receipts[0].receipt.data_service;
 
     let mut value_aggregate: u128 = 0;
     let mut timestamp_ns: u64 = 0;
@@ -73,7 +77,7 @@ async fn aggregate_handler(
 
         if r.data_service != data_service {
             return Err(GatewayError::InvalidRequest(format!(
-                "receipt data_service mismatch: expected {data_service}, got {}",
+                "mixed data_service in batch: expected {data_service}, got {}",
                 r.data_service
             )));
         }

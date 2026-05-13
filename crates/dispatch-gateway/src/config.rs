@@ -52,6 +52,8 @@ pub struct Config {
     pub service: Option<ServiceConfig>,
     /// Optional auto-provisioning: fund escrow for new providers automatically.
     pub provisioning: Option<ProvisioningConfig>,
+    /// Optional Seahorn (Solana structured data) proxy configuration.
+    pub seahorn: Option<SeahornConfig>,
 }
 
 /// Connection details for the local dispatch-service instance.
@@ -195,6 +197,26 @@ pub struct ProvisioningConfig {
     pub interval_secs: u64,
 }
 
+/// Seahorn (Solana structured data service) proxy configuration.
+///
+/// When present, the gateway exposes a `/solana/*path` route that proxies
+/// REST queries to the Seahorn provider, attaching a signed TAP receipt.
+#[derive(Debug, Deserialize, Clone)]
+pub struct SeahornConfig {
+    /// Base URL of the Seahorn provider, e.g. "https://solana.lodestar-dashboard.com".
+    pub endpoint: String,
+    /// Seahorn provider's on-chain service provider address.
+    pub service_provider: Address,
+    /// SolanaDataService contract address — written into every TAP receipt.
+    pub data_service_address: Address,
+    /// GRT wei charged per Seahorn query.
+    #[serde(
+        default = "default_seahorn_price_grt_wei",
+        deserialize_with = "deserialize_u128"
+    )]
+    pub price_grt_wei: u128,
+}
+
 impl Config {
     pub fn load() -> Result<Self> {
         let path =
@@ -265,6 +287,9 @@ fn default_min_escrow_threshold() -> u128 {
 fn default_provision_interval_secs() -> u64 {
     600
 } // 10 minutes
+fn default_seahorn_price_grt_wei() -> u128 {
+    10_000_000_000_000
+} // 10e12 GRT wei ≈ $0.00026 per query at $0.026/GRT
 
 #[cfg(test)]
 mod tests {
