@@ -18,7 +18,7 @@ use dispatch_tap::create_receipt;
 use crate::server::AppState;
 
 pub fn router() -> Router<AppState> {
-    Router::new().route("/solana/{*path}", any(seahorn_handler))
+    Router::new().route("/solana/*path", any(seahorn_handler))
 }
 
 async fn seahorn_handler(
