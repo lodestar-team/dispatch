@@ -239,6 +239,21 @@ pub async fn delete_covered(pool: &Pool, payer_hex: &str, up_to_ns: i64) -> anyh
     Ok(result.rows_affected())
 }
 
+/// Fetch the stored value_aggregate for a collection_id from tap_ravs.
+/// Returns 0 if no RAV exists yet — used as the cumulative floor by the aggregator.
+pub async fn fetch_rav_floor(pool: &Pool, collection_id_hex: &str) -> anyhow::Result<u128> {
+    let row = sqlx::query("SELECT value_aggregate FROM tap_ravs WHERE collection_id = $1")
+        .bind(collection_id_hex)
+        .fetch_optional(pool)
+        .await?;
+    if let Some(r) = row {
+        let s: String = r.get("value_aggregate");
+        Ok(s.parse::<u128>().unwrap_or(0))
+    } else {
+        Ok(0)
+    }
+}
+
 /// Insert or update the RAV for a given collection_id.
 /// `value_aggregate` and `timestamp_ns` are always replaced with the latest values.
 pub async fn upsert_rav(pool: &Pool, rav: RavRow<'_>) -> anyhow::Result<()> {

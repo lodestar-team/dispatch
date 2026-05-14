@@ -42,6 +42,11 @@ pub struct AggregateRequest {
     /// All receipts to include in this RAV (for full cumulative aggregation, include
     /// all historical receipts, not just new ones).
     pub receipts: Vec<SignedReceipt>,
+    /// Floor value (GRT wei) to add to the receipt sum.
+    /// Set this to the value_aggregate of the last stored RAV so the
+    /// cumulative invariant is preserved across receipt pruning and signer rotations.
+    #[serde(default)]
+    pub previous_rav_value: u128,
 }
 
 #[derive(Debug, Serialize)]
@@ -69,7 +74,7 @@ async fn aggregate_handler(
     // rather than restricting to a single configured address.
     let data_service = req.receipts[0].receipt.data_service;
 
-    let mut value_aggregate: u128 = 0;
+    let mut value_aggregate: u128 = req.previous_rav_value;
     let mut timestamp_ns: u64 = 0;
 
     for signed in &req.receipts {
